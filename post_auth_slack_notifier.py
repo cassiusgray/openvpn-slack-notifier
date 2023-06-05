@@ -1,9 +1,9 @@
 import json
-import urllib2
+import urllib.request
 from pyovpn.plugin import *
 
 # MODIFY THIS!!!!!!!!!!!
-WEBHOOK_URL = ''
+WEBHOOK_URL = '*** PUT YOUR SLACK WEBOOK URL IN HERE ***'
 
 # If False or undefined, AS will call us asynchronously in a worker thread.
 # If True, AS will call us synchronously (server will block during call),
@@ -16,7 +16,7 @@ def post_auth(authcred, attributes, authret, info):
 
     try:
         # The 'print' lines go to the log file at /var/log/openvpnas.log (by default).
-        print "********** POST_AUTH", authcred, attributes, authret, info
+        print("********** POST_AUTH", authcred, attributes, authret, info)
 
         if not WEBHOOK_URL:
             raise Exception("WEBHOOK_URL is not declared on server. Please contact to VPN Server Admin.")
@@ -32,23 +32,23 @@ def post_auth(authcred, attributes, authret, info):
 
             # Send POST request to slack
             params = json.dumps({
-                'text': "*New Connection*\n>>>• User: {username}\n• IP Address: {clientip}\n• Mac Address: {hw_addr}\n• Platform: {platform}".format(
+                'text': "*New Connection*\n>>>• User: {username}\n• Originating IP Address: {clientip}\n• Mac Address: {hw_addr}\n• OS & Version: {platform}".format(
                     username=username,
                     clientip=clientip,
                     hw_addr=hw_addr,
                     platform=platform,
                 )
             }).encode('utf-8')
-            req = urllib2.Request(WEBHOOK_URL,
+            req = urllib.request.Request(WEBHOOK_URL,
                                   data=params,
                                   headers={'content-type': 'application/json'})
-            resp = urllib2.urlopen(req)
+            resp = urllib.request.urlopen(req)
             resp.read()
 
     except Exception as ex:
         authret['status'] = FAIL
-        authret['reason'] = ex.message         # this error string is written to the server log file
-        authret['client_reason'] = ex.message  # this error string is reported to the client user
+        authret['reason'] = str(ex)         # this error string is written to the server log file
+        authret['client_reason'] = str(ex)  # this error string is reported to the client user
 
     finally:
         return authret, proplist_save
